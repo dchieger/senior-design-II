@@ -5,13 +5,13 @@
 # Original Copyright 2020-2024 Siemens Energy AG
 # Modifications for DigitalOcean environment
 
-# Set up environment variables
+
 export FIRMWARE_PATH="/root/senior-design-II/deep_password_search/firmware"
 export CONFIG_DIR="/root/senior-design-II/deep_password_search/config"
 export TMP_DIR="/root/senior-design-II/deep_password_search/tmp"
 export LOG_PATH_MODULE="/root/senior-design-II/deep_password_search/logs"
 
-# Color definitions
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 ORANGE='\033[0;33m'

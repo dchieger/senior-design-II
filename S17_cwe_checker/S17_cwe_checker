@@ -120,3 +120,64 @@ process_nikto_results() {
         fi
     fi
 }
+
+check_for_basic_auth_init() {
+    local IP_="$1"
+    local PORT_="$2"
+    local CREDS="NA"
+    local BASIC_AUTH=0
+    
+    BASIC_AUTH=$(find "${LOG_DIR}/l15_emulated_checks_nmap/" -name "nmap*" -exec grep -i "401 Unauthorized" {} \; | wc -l)
+    
+    if [[ "${BASIC_AUTH}" -gt 0 ]]; then
+        print_output "[*] Web server with basic auth protected ... performing login attempt"
+        
+        # Try different credentials
+        for CREDS in "admin:" "user:" "admin:password"; do
+            if curl -v -L --noproxy '*' --max-redirs 0 -f -m 5 -s -X GET -u "${CREDS}" "http://${IP_}:${PORT_}/" 2>&1 | grep -q "200 OK"; then
+                print_output "[+] Basic auth credentials for web server found: ${CREDS}"
+                export CURL_CREDS=(-u "${CREDS}")
+                break
+            fi
+        done
+    else
+        print_output "[*] No basic auth found in Nmap logs"
+    fi
+}
+
+testssl_check() {
+    local IP_="$1"
+    local PORT_="$2"
+    
+    if [[ ! -d "${EXT_DIR}/testssl.sh" ]]; then
+        print_output "[-] testssl.sh not found!"
+        return
+    fi
+    
+    print_output "Starting testssl.sh analysis for ${IP_}:${PORT_}"
+    timeout --preserve-status --signal SIGINT 600 "${EXT_DIR}/testssl.sh/testssl.sh" "${IP_}:${PORT_}" > "${LOG_DIR}/testssl-${IP_}-${PORT_}.txt"
+    print_output "[*] Finished testssl.sh web server analysis for ${IP_}:${PORT_}"
+}
+
+web_access_crawler() {
+    local IP_="$1"
+    local PORT_="$2"
+    local SSL_="$3"
+    local PROTO="http"
+    local CURL_OPTS=(-sS --noproxy '*')
+    
+    [[ "${SSL_}" -eq 1 ]] && PROTO="https" && CURL_OPTS+=(-k)
+    [[ -v CURL_CREDS ]] && CURL_OPTS+=("${CURL_CREDS[@]}")
+    
+    print_output "Starting web server crawling for ${IP_}:${PORT_}"
+    
+    # Perform crawling logic here
+    # This is a simplified version and may need to be expanded based on your specific requirements
+    
+    local PATHS=("/")
+    for path in "${PATHS[@]}"; do
+        curl "${CURL_OPTS[@]}" "${PROTO}://${IP_}:${PORT_}${path}" -o /dev/null -w '%{http_code}:%{size_download}\n' >> "${LOG_DIR}/crawling_${IP_}-${PORT_}.log"
+    done
+    
+    print_output "[*] Finished web server crawling for ${IP_}:${PORT_}"
+}
