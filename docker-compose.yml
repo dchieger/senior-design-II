@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  sender:
+    build: 
+      context: ./sender
+      dockerfile: Dockerfile
+    volumes:
+      - ./sender/data:/app/data
+      - shared-data:/shared
+    networks:
+      - file-network
+    command: python watch_folder.py
+
+  receiver:
+    build:
+      context: ./receiver
+      dockerfile: Dockerfile
+    volumes:
+      - ./receiver/data:/app/data
+      - shared-data:/shared
+    networks:
+      - file-network
+    command: python watch_folder.py
+
+volumes:
+  shared-data:
+
+networks:
+  file-network:
+    driver: bridge
